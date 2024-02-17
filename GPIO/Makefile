@@ -21,7 +21,7 @@ $(ELF): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) $(COMMFLAGS) -c $< -o $@
 
-flash:
+flash: $(OUTPUT)
 	avrdude -p $(CHIP) -c usbasp -P usb -U flash:w:$(OUTPUT)
 
 clean:
