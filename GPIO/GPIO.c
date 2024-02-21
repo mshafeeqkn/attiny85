@@ -1,6 +1,13 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
+/**
+ *  Connections
+ *  PB0 --> switch --> GND
+ *  PB4 --> LED ->> GND
+ */
+
+
 #define SWITCH_PIN      (1 << PB0)
 #define LED_PIN_ON      (1 << PB4)
 
