@@ -3,7 +3,7 @@
 #include <avr/interrupt.h>
 
 #include <CharlieMux.h>
-#define NUM_MODES   3
+#define NUM_MODES   4
 
 unsigned char mode = 0;
 static unsigned int data = 0x1;
@@ -22,7 +22,15 @@ ISR(INT0_vect) {
         case 2:
             data = 0xC;
             break;
+        case 3:
+            data = 0;
+            break;
     }
+}
+
+ISR(ADC_vect) {
+    repeat_count = ADCH / 3;
+    ADCSRA &= ~(1 << ADIF);
 }
 
 void next() {
@@ -59,15 +67,29 @@ void next() {
 
             data = (msb << 3) | lsb;
             break;
+
+        case 3:
+            data <<= 1;
+            if(data & 0x40) {
+                data &= ~(1);
+            } else {
+                data |= 1;
+            }
+            break;
     }
 }
 
 int main(void) {
+    ADCSRA |= ( (1 << ADEN) | (1 << ADIE) );                    // Enable ADC, and ADC interrupt
+    ADMUX |= (1 << ADLAR);                                      // Align left
+
     DDRB &= ~(1 << PB2);
     MCUCR |= (1 << ISC01);
     GIMSK |= (1 << INT0);
     sei();
+
     while(1) {
+        ADCSRA |= (1 << ADSC);
         glow_pattern(data);
         next();
     }

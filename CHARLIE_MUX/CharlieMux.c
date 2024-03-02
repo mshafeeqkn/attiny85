@@ -2,7 +2,7 @@
 #include <util/delay.h>
 
 #define NUM_LED     6
-#define REPEAT_PATTERN  50
+volatile uint8_t repeat_count = 50;
 
 static uint8_t led_map[][3] = {
     { PB0, PB1, PB3 }, { PB1, PB0, PB3 },
@@ -21,7 +21,7 @@ void glow_pattern(unsigned int data) {
     unsigned int mask;
     unsigned char i, r;
 
-    for(r = 0; r < REPEAT_PATTERN; r++) {
+    for(r = 0; r < repeat_count; r++) {
         mask = 1;
         for(i = 0; i < NUM_LED; i++) {
             if(mask & data) {
