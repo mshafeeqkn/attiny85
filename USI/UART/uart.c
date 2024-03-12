@@ -41,13 +41,13 @@ static void send_data(uint8_t data) {
     TCCR0A |= (1 << WGM00);                     // Clear timer on compare match
     TCCR0B |= (1 << CS00);                      // Set prescaler to clk
     GTCCR  |= (1 << PSR0);                      // Reset prescaler
-    OCR0A = 208;                                 // 128000/4800 = 26.667 baud rate 4800
+    OCR0A = 4000000/(2400 * 8);                 // 4000000/2400 = 208 baud rate 2400
     TCNT0 = 0;                                  // Count up from 0 
 
     /* Configure USI 3 wire mode and use PB1 as data output pin */
     USIDR = 0x00 | (data_buff >> 1);            // Set start bit 0 and append first 7 bits
     USICR |= (1 << USIOIE) |                    // Enabled overflow interrupt
-             (1 << USIWM1) | (1 << USIWM0) |    // Enable 3 wire mode - data output to PB1
+             (0 << USIWM1) | (1 << USIWM0) |    // Enable 3 wire mode - data output to PB1
              (0 << USICS1) | (1 << USICS0) | (0 << USICLK);  // Select Timer0 Compare match as USI Clock source.
 
     USISR |= (1 << USIOIF) |                    // Clear overflow interrupt flag
@@ -72,9 +72,24 @@ ISR (USI_OVF_vect) {
 int main(void) {
     setup_usi_uart();
 
+    DDRB |= ( 1 << PB3) | (1 << PB4);
+    PORTB |= ( 1 << PB3);
+
     while(1) {
         while( AVAILABLE != line_status );   // wait until the data is available
-        send_data('M');
+        _delay_ms(4000);
+        send_data(0x01);
+        _delay_ms(1000);
+        send_data(0x01);
+        _delay_ms(1000);
+        send_data(0x02);
+        _delay_ms(1000);
+        send_data(0x03);
+        _delay_ms(1000);
+        send_data(0x04);
+        _delay_ms(1000);
+        send_data(0x05);
+        _delay_ms(1000);
     }
     return 0;
 }
