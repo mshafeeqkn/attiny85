@@ -22,8 +22,8 @@ try:
             char = ser.read(1).hex()
             print('0x' + char, end=" ")
         else:
-            line = ser.readline().decode().strip()
-            print(line)
+            char = ser.read(1)
+            print(char.decode('utf-8'), end="")
         sys.stdout.flush()
         # print(strdata.ljust(30), " hex: ", data)
 
