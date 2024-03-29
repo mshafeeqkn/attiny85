@@ -8,7 +8,7 @@ baud_rate = 2400  # Change this to match your device's baud rate
 
 # Initialize the serial port
 ser = serial.Serial(serial_port, baud_rate)
-
+print_hex = False
 try:
     while True:
         # ser.write(b'Hello, Arduino!\n')  # Change the message as needed
@@ -18,15 +18,12 @@ try:
 
         # Print a confirmation message
         # print("Data sent successfully")
-
-        # Read a line of data from the serial port
-        # line = ser.readline().decode().strip()
-        # line = ser.readline()
-        # data = ' '.join('%02x' % byte for byte in line)
-        # strdata = line.decode().strip();
-        # Print the received data
-        char = ser.read(1).hex()
-        print('0x' + char, end=" ")
+        if print_hex:
+            char = ser.read(1).hex()
+            print('0x' + char, end=" ")
+        else:
+            line = ser.readline().decode().strip()
+            print(line)
         sys.stdout.flush()
         # print(strdata.ljust(30), " hex: ", data)
 
