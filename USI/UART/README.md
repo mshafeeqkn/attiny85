@@ -1,11 +1,11 @@
-How to use serial_read.py
+# How to use serial_read.py
 
-Show the data read as plain string
+## Show the data read as plain string
 `
 python serial_read.py
 `
 
-Show the data read as hex
+## Show the data read as hex
 `
 python serial_read.py -h
 `
