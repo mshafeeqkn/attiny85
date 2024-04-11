@@ -44,13 +44,21 @@ ser = serial.Serial(serial_port, baud_rate)
 
 # Read serial port data and print
 try:
+    data_to_send = struct.pack('B', 0)
+    ser.write(data_to_send);
     data_to_send = struct.pack('B', data)
-    # char_to_send = 'b';
-    # data_to_send = char_to_send.encode()
     ser.write(data_to_send);
 
-    # char = ser.read(1).hex()
-    # print('0x' + char, end=" ")
+    # while True:
+    #     char = ser.read(1)
+    #     try:
+    #         d = char.decode('utf-8')
+    #         print(d, end="")
+    #         if d == '\n' :
+    #             break
+    #     except UnicodeDecodeError:
+    #         pass
+    #     sys.stdout.flush()
 
 except KeyboardInterrupt:
     print("\n\nSerial port closed\n\n")
