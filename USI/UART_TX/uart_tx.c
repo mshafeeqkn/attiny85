@@ -53,8 +53,6 @@ volatile static line_status_t line_status = AVAILABLE;
 
 static uint8_t  data_buff;
 
- * @param
- * @return
 /**
  * @brief Initialize UART, set output pins
  * 
