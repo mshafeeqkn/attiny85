@@ -44,11 +44,10 @@ ser = serial.Serial(serial_port, baud_rate)
 
 # Read serial port data and print
 try:
-    data_to_send = struct.pack('B', 0)
+    data_to_send = bytearray([data] * 5)
+    # data_to_send = struct.pack('B', data)
+    print(data_to_send)
     ser.write(data_to_send);
-    data_to_send = struct.pack('B', data)
-    ser.write(data_to_send);
-
     # while True:
     #     char = ser.read(1)
     #     try:
