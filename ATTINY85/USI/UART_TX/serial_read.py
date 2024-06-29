@@ -28,41 +28,40 @@
 import serial
 import time
 import sys
-import struct
 
 # Define the serial port name and baudrate
 serial_port = '/dev/tty.usbserial-1410'  # TODO: Change this to your serial port name
 baud_rate = 2400                         # Change this to match your device's baud rate
-
-if (len(sys.argv)) > 1:
-    data = int(sys.argv[1])
-else:
-    data = 0
+# baud_rate = 115200                         # Change this to match your device's baud rate
 
 # Initialize the serial port
 ser = serial.Serial(serial_port, baud_rate)
 
+# Process command line arguments
+print_hex = False
+if len(sys.argv) > 1 and sys.argv[1] == '-h':
+    print_hex = True
+
+ser.write('abc\r\n'.encode());
 # Read serial port data and print
 try:
-    data_to_send = bytearray([data] * 5)
-    # data_to_send = struct.pack('B', data)
-    print(data_to_send)
-    ser.write(data_to_send);
-    # while True:
-    #     char = ser.read(1)
-    #     try:
-    #         d = char.decode('utf-8')
-    #         print(d, end="")
-    #         if d == '\n' :
-    #             break
-    #     except UnicodeDecodeError:
-    #         pass
-    #     sys.stdout.flush()
+    while True:
+        if print_hex:
+            char = ser.read(1).hex()
+            print('0x' + char, end=" ")
+        else:
+            char = ser.read(1)
+            try:
+                print(char.decode('utf-8'), end="")
+            except UnicodeDecodeError:
+                pass
+        sys.stdout.flush()
+        ser.write('a'.encode())
 
 except KeyboardInterrupt:
+    ser.close()
     print("\n\nSerial port closed\n\n")
 except OSError:
     print("\n\nDevice unplugged\n\n")
 finally:
-    ser.close()
     print("   GOOD BYE\n\n")
