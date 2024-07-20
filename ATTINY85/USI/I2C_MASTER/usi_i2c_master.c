@@ -30,6 +30,8 @@ ISR(TIM0_COMPA_vect) {
 ISR(USI_OVF_vect) {
     USISR |= USI_CNT_OVF_FLAG;
     TCCR0B &= ~TIM0_PRESCALER;
+    _delay_ms(65);
+    clock_pulse();
 }
 
 int main() {
@@ -49,8 +51,12 @@ int main() {
 
     // Enable global interrupt
     sei();
+    USIDR = 0b01010101;
+    PORTB  |= I2C_SDA;
 
+    _delay_ms(1000);
     TCCR0B |= TIM0_PRESCALER;
+    clock_pulse();
 
     while(1);
 }
