@@ -22,6 +22,10 @@ $(ELF): $(OBJS)
 	$(CC) $(CFLAGS) $(COMMFLAGS) -c $< -o $@
 
 flash: $(OUTPUT)
+	# Default Fuse register configuration
+	# avrdude -p $(CHIP) -c usbasp -P usb -U flash:w:$(OUTPUT) -U lfuse:w:0x62:m
+	# External 8MHz Oscillator
+	# avrdude -p $(CHIP) -c usbasp -P usb -U flash:w:$(OUTPUT) -U lfuse:w:0xFD:m
 	avrdude -p $(CHIP) -c usbasp -P usb -U flash:w:$(OUTPUT)
 
 clean:
