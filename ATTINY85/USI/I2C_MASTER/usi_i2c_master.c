@@ -4,10 +4,10 @@
 
 #define I2C_SCL                 (1 << PB2)
 #define I2C_SDA                 (1 << PB0)
-#define LED_PIN                 (1 << PB1)
 
+#define TIM0_COMP_A_FLAG        (1 << OCF0A)
 #define TIM0_CTC_MODE           (1 << WGM01)
-#define TIM0_PRESCALER          ((1 << CS00));
+#define TIM0_PRESCALER          (1 << CS01)
 #define TIM0_COMP_A_INTR_EN     (1 << OCIE0A)
 
 #define USI_TWO_WIRE_MODE       (1 << USIWM1)
@@ -15,69 +15,87 @@
 #define USI_CNT_OVF_FLAG        (1 << USIOIF)
 #define USI_CNT_OVF_INT_EN      (1 << USIOIE)
 #define USI_TOGGLE_CLOCK        (1 << USITC)
+#define USI_START_COND_FLAG     (1 << USISIF)
 
-static volatile uint8_t bus_free = 0;
+volatile uint8_t complete = 0;
 
-static inline void clock_pulse() {
-    _delay_us(3);
+ISR(TIM0_COMPA_vect) {
+    TIFR |= TIM0_COMP_A_FLAG;
+    _delay_us(2);
     USICR |= USI_TOGGLE_CLOCK;
     _delay_us(4);
     USICR |= USI_TOGGLE_CLOCK;
-}
-
-ISR(TIM0_COMPA_vect) {
-    clock_pulse();
 }
 
 ISR(USI_OVF_vect) {
-    USISR |= USI_CNT_OVF_FLAG;
+    USIDR = 0x80;
+    TIFR |= TIM0_COMP_A_FLAG;
     TCCR0B &= ~TIM0_PRESCALER;
-    _delay_us(3);
-    clock_pulse();
+    USISR |= USI_CNT_OVF_FLAG;
+    PORTB |= I2C_SDA;
+    USISR &= 0x0F;
 
-    _delay_us(3);
-    USICR |= USI_TOGGLE_CLOCK;
-    _delay_us(4);
-    bus_free = 1;
+    complete = 1;
 }
 
 int main() {
-    // Set port as output and set it as high
-    DDRB  |= I2C_SDA | I2C_SCL | LED_PIN;
+    DDRB  |= I2C_SDA | I2C_SCL;
+    PORTB |= I2C_SDA | I2C_SCL;
 
-    USISR |= USI_CNT_OVF_FLAG | 8;
-    USICR |= USI_TWO_WIRE_MODE |
-                USI_CNT_OVF_INT_EN |
-                USI_CLK_TIM0_COMP;
+    USIDR = 0xA1;
+    USISR |= (USI_CNT_OVF_FLAG | 8);
+    USICR |= (USI_TWO_WIRE_MODE |
+              USI_CNT_OVF_INT_EN |
+              USI_CLK_TIM0_COMP);
 
-    // Timer/Counter0 Compare mode; prescaler 1024,
-    // Compare match at 255 (Maximum delay)
     TCCR0A |= TIM0_CTC_MODE;
     TIMSK  |= TIM0_COMP_A_INTR_EN;
     OCR0A  = 0x9;
-
-    // Enable global interrupt
     sei();
-    USIDR = 0xA0;
-    PORTB  |= I2C_SDA;
-    TCCR0B |= TIM0_PRESCALER;
-    clock_pulse();
 
-    while(!bus_free);
-    bus_free = 0;
+    PORTB &= ~(I2C_SDA);
+    _delay_us(5);
+    PORTB &= ~(I2C_SCL);
+    PORTB |= I2C_SDA;
+    USISR |= USI_START_COND_FLAG;
+
+    TCCR0B |= TIM0_PRESCALER;
+    _delay_us(2);
     USICR |= USI_TOGGLE_CLOCK;
-    _delay_us(3);
+    _delay_us(4);
+    USICR |= USI_TOGGLE_CLOCK;
+
+    while(complete == 0);
+    complete = 0;
+    _delay_us(10);
     USIDR = 0x00;
     TCCR0B |= TIM0_PRESCALER;
-    clock_pulse();
-
-    while(!bus_free);
-    bus_free = 0;
+    USISR |= (0xF0 | 8);
+    _delay_us(2);
     USICR |= USI_TOGGLE_CLOCK;
-    _delay_us(3);
+    _delay_us(4);
+    USICR |= USI_TOGGLE_CLOCK;
+    while(complete == 0);
+    complete = 0;
+    _delay_us(2);
+    USICR |= USI_TOGGLE_CLOCK;
+    _delay_us(4);
+    USICR |= USI_TOGGLE_CLOCK;
+
+    _delay_us(10);
     USIDR = 0xAB;
     TCCR0B |= TIM0_PRESCALER;
-    clock_pulse();
+    USISR |= (0xF0 | 8);
+    _delay_us(2);
+    USICR |= USI_TOGGLE_CLOCK;
+    _delay_us(4);
+    USICR |= USI_TOGGLE_CLOCK;
+    while(complete == 0);
+    complete = 0;
+    _delay_us(2);
+    USICR |= USI_TOGGLE_CLOCK;
+    _delay_us(4);
+    USICR |= USI_TOGGLE_CLOCK;
 
     while(1);
 }
