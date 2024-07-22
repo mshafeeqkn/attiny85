@@ -10,92 +10,80 @@
 #define TIM0_PRESCALER          (1 << CS01)
 #define TIM0_COMP_A_INTR_EN     (1 << OCIE0A)
 
-#define USI_TWO_WIRE_MODE       (1 << USIWM1)
-#define USI_CLK_TIM0_COMP       (1 << USICS0)
-#define USI_CNT_OVF_FLAG        (1 << USIOIF)
-#define USI_CNT_OVF_INT_EN      (1 << USIOIE)
-#define USI_TOGGLE_CLOCK        (1 << USITC)
-#define USI_START_COND_FLAG     (1 << USISIF)
-
-volatile uint8_t complete = 0;
+volatile uint8_t data = 0;
+volatile uint8_t count = 8;
+volatile uint8_t done = 0;
 
 ISR(TIM0_COMPA_vect) {
     TIFR |= TIM0_COMP_A_FLAG;
+    if(count == 0) {
+        TCCR0B &= ~TIM0_PRESCALER;
+        PORTB |= I2C_SDA;
+        done = 1;
+        count = 8;
+    } else {
+        count--;
+        PORTB |= ((data & 1) << PB0);
+        data >>= 1;
+    }
+
     _delay_us(2);
-    USICR |= USI_TOGGLE_CLOCK;
+    PORTB |= I2C_SCL;
     _delay_us(4);
-    USICR |= USI_TOGGLE_CLOCK;
+    PORTB &= ~I2C_SCL;
+    _delay_us(2);
+
+    if(count != 0) {
+        PORTB &= ~1;
+    }
 }
 
-ISR(USI_OVF_vect) {
-    USIDR = 0x80;
-    TIFR |= TIM0_COMP_A_FLAG;
-    TCCR0B &= ~TIM0_PRESCALER;
-    USISR |= USI_CNT_OVF_FLAG;
+uint8_t reverse_byte(uint8_t byte) {
+    byte = ((byte & 0x55) << 1) | ((byte & 0xAA) >> 1);
+    byte = ((byte & 0x33) << 2) | ((byte & 0xCC) >> 2);
+    byte = ((byte & 0x0F) << 4) | ((byte & 0xF0) >> 4);
+    return byte;
+}
+
+void send_byte(uint8_t byte) {
+    data = reverse_byte(byte);
+    TCCR0B |= TIM0_PRESCALER;
+    while(done != 1);
+    done = 0;
+}
+
+void write_eeprom(uint8_t dev, uint8_t addr, uint8_t *data, uint8_t len) {
+    int i = 0;
+
+    PORTB &= ~(I2C_SDA);
+    _delay_us(5);
+    PORTB &= ~(I2C_SCL);
+
+    send_byte(dev << 1);
+    send_byte(addr);
+    for(i = 0; i < 16; i++) {
+        send_byte(data[i]);
+    }
+
+    PORTB |= I2C_SCL;
+    _delay_us(5);
     PORTB |= I2C_SDA;
-    USISR &= 0x0F;
-
-    complete = 1;
 }
 
-int main() {
+void init_i2c() {
     DDRB  |= I2C_SDA | I2C_SCL;
     PORTB |= I2C_SDA | I2C_SCL;
-
-    USIDR = 0xA1;
-    USISR |= (USI_CNT_OVF_FLAG | 8);
-    USICR |= (USI_TWO_WIRE_MODE |
-              USI_CNT_OVF_INT_EN |
-              USI_CLK_TIM0_COMP);
 
     TCCR0A |= TIM0_CTC_MODE;
     TIMSK  |= TIM0_COMP_A_INTR_EN;
     OCR0A  = 0x9;
     sei();
+}
 
-    PORTB &= ~(I2C_SDA);
-    _delay_us(5);
-    PORTB &= ~(I2C_SCL);
-    PORTB |= I2C_SDA;
-    USISR |= USI_START_COND_FLAG;
+int main() {
 
-    TCCR0B |= TIM0_PRESCALER;
-    _delay_us(2);
-    USICR |= USI_TOGGLE_CLOCK;
-    _delay_us(4);
-    USICR |= USI_TOGGLE_CLOCK;
-
-    while(complete == 0);
-    complete = 0;
-    _delay_us(10);
-    USIDR = 0x00;
-    TCCR0B |= TIM0_PRESCALER;
-    USISR |= (0xF0 | 8);
-    _delay_us(2);
-    USICR |= USI_TOGGLE_CLOCK;
-    _delay_us(4);
-    USICR |= USI_TOGGLE_CLOCK;
-    while(complete == 0);
-    complete = 0;
-    _delay_us(2);
-    USICR |= USI_TOGGLE_CLOCK;
-    _delay_us(4);
-    USICR |= USI_TOGGLE_CLOCK;
-
-    _delay_us(10);
-    USIDR = 0xAB;
-    TCCR0B |= TIM0_PRESCALER;
-    USISR |= (0xF0 | 8);
-    _delay_us(2);
-    USICR |= USI_TOGGLE_CLOCK;
-    _delay_us(4);
-    USICR |= USI_TOGGLE_CLOCK;
-    while(complete == 0);
-    complete = 0;
-    _delay_us(2);
-    USICR |= USI_TOGGLE_CLOCK;
-    _delay_us(4);
-    USICR |= USI_TOGGLE_CLOCK;
+    init_i2c();
+    write_eeprom(0x50, 0x20, (uint8_t*)"MOHAMMED SHAFEEQUE K N", 22);
 
     while(1);
 }
