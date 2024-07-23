@@ -22,9 +22,9 @@ CHIP=attiny85
 MMCU=-mmcu=$(CHIP)
 MCU=--mcu=$(CHIP)
 COMMFLAGS=-g $(MMCU)
-CFLAGS=-Os -Wall -DF_CPU=1000000UL -I.
+CFLAGS=-Os -Wall -DF_CPU=8000000UL -I.
 SRCS=$(wildcard *.c)
-OUTPUT=out.hex
+OUTPUT=$(SRCS:.c=.hex)
 ELF=$(OUTPUT:.hex=.elf)
 OBJS=$(SRCS:.c=.o)
 
@@ -41,6 +41,10 @@ $(ELF): $(OBJS)
 	$(CC) $(CFLAGS) $(COMMFLAGS) -c $< -o $@
 
 flash: $(OUTPUT)
+	# 8MHz frequency fuse
+	# avrdude -p $(CHIP) -c usbasp -P usb -U flash:w:$(OUTPUT) -U lfuse:w:0xE2:m
+	# Default FUSE
+	# avrdude -p $(CHIP) -c usbasp -P usb -U flash:w:$(OUTPUT) -U lfuse:w:0x62:m
 	avrdude -p $(CHIP) -c usbasp -P usb -U flash:w:$(OUTPUT)
 
 clean:
