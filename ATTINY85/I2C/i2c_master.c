@@ -71,7 +71,7 @@ void write_eeprom(uint8_t dev, uint8_t addr, uint8_t *data, uint8_t len) {
         PORTB |= I2C_SCL;
         _delay_us(5);
         PORTB |= I2C_SDA;
-        _delay_us(50);
+        _delay_ms(6);
     }
 }
 
@@ -88,9 +88,9 @@ void init_i2c() {
 int main() {
 
     init_i2c();
-    write_eeprom(0x50, 0x10, (uint8_t*)"M Shafeeque K Nxxxxxxx", 22);
-    write_eeprom(0x50, 0x30, (uint8_t*)"Muhammed Izan K Nxxxxx", 22);
-    write_eeprom(0x50, 0x50, (uint8_t*)"Fathima Shanza K Nxxxx", 22);
+    write_eeprom(0x50, 0x10,
+        (uint8_t*)"This is a sample string to test a very long"
+                  "length string having around 90 charecter length", 90);
 
     while(1);
 }
