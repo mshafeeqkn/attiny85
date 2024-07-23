@@ -54,20 +54,25 @@ void send_byte(uint8_t byte) {
 
 void write_eeprom(uint8_t dev, uint8_t addr, uint8_t *data, uint8_t len) {
     int i = 0;
+    uint8_t end_addr;
 
-    PORTB &= ~(I2C_SDA);
-    _delay_us(5);
-    PORTB &= ~(I2C_SCL);
+    while(i < len) {
+        end_addr= addr | 0x0F;
+        PORTB &= ~(I2C_SDA);
+        _delay_us(5);
+        PORTB &= ~(I2C_SCL);
 
-    send_byte(dev << 1);
-    send_byte(addr);
-    for(i = 0; i < 16; i++) {
-        send_byte(data[i]);
+        send_byte(dev << 1);
+        send_byte(addr);
+        for(; (addr <= end_addr && i < len); i++, addr++) {
+            send_byte(data[i]);
+        }
+
+        PORTB |= I2C_SCL;
+        _delay_us(5);
+        PORTB |= I2C_SDA;
+        _delay_us(50);
     }
-
-    PORTB |= I2C_SCL;
-    _delay_us(5);
-    PORTB |= I2C_SDA;
 }
 
 void init_i2c() {
@@ -83,7 +88,9 @@ void init_i2c() {
 int main() {
 
     init_i2c();
-    write_eeprom(0x50, 0x20, (uint8_t*)"MOHAMMED SHAFEEQUE K N", 22);
+    write_eeprom(0x50, 0x10, (uint8_t*)"M Shafeeque K Nxxxxxxx", 22);
+    write_eeprom(0x50, 0x30, (uint8_t*)"Muhammed Izan K Nxxxxx", 22);
+    write_eeprom(0x50, 0x50, (uint8_t*)"Fathima Shanza K Nxxxx", 22);
 
     while(1);
 }
